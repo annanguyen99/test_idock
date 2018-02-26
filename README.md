@@ -30,6 +30,8 @@ Supported operating systems and compilers
 Compilation
 -----------
 
+Precompiled executables are already provided in the `bin` folder. Should you need to compile from source code, below are some guidelines.
+
 idock depends on [Boost C++ Libraries]. Boost 1.55.0 is tested. The Boost libraries required by idock are `System`, `Filesystem` and `Program Options`.
 
 ### Compilation on Linux

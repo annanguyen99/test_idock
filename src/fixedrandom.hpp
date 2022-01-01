@@ -4,7 +4,6 @@
 
 #include "randomnumgen_numpycompatible.hpp"
 #include "array.hpp"
-#include <math.h>
 
 class FixedRandom{
 
@@ -22,7 +21,7 @@ public:
 		return uniformDouble(-1, 1);
 	}
 	double upi() {
-		return uniformDouble(-_Pi, _Pi);
+		return uniformDouble(-std::_Pi, std::_Pi);
 	}
 	double ub0() {
 		return uniformDouble(c0[0], c1[0]);

@@ -1,7 +1,6 @@
 #ifndef RANDOMNUMGEN_NUMPYCOMPATIBLE_H
 #define RANDOMNUMGEN_NUMPYCOMPATIBLE_H
 
-//#include "randomnumgenerator.h"
 #include <random>
 #include <stdexcept>
 

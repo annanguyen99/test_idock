@@ -1,4 +1,4 @@
-#include <random>
+//#include <random>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -6,6 +6,7 @@
 #include "matrix.hpp"
 #include "array.hpp"
 #include "ligand.hpp"
+#include "fixedrandom.hpp"
 
 ligand::ligand(const path& p, array<double, 3>& origin) :
 	xs{},
@@ -593,15 +594,19 @@ void ligand::monte_carlo(vector<result>& results, const size_t seed, const scori
 	const double e_upper_bound = static_cast<double>(4 * num_heavy_atoms); // A conformation will be droped if its free energy is not better than e_upper_bound.
 	const double required_square_error = static_cast<double>(1 * num_heavy_atoms); // Ligands with RMSD < 1.0 will be clustered into the same cluster.
 
-	mt19937_64 rng(seed);
-	uniform_real_distribution<double> u01(0, 1);
-	uniform_real_distribution<double> u11(-1, 1);
-	uniform_real_distribution<double> upi(-pi, pi);
-	uniform_real_distribution<double> ub0(rec.corner0[0], rec.corner1[0]);
-	uniform_real_distribution<double> ub1(rec.corner0[1], rec.corner1[1]);
-	uniform_real_distribution<double> ub2(rec.corner0[2], rec.corner1[2]);
-	uniform_int_distribution<size_t> uen(0, num_entities - 1);
-	normal_distribution<double> n01(0, 1);
+	//mt19937_64 rng(seed);
+	//uniform_real_distribution<double> u01(0, 1);
+	//uniform_real_distribution<double> u11(-1, 1);
+	//uniform_real_distribution<double> upi(-pi, pi);
+	//uniform_real_distribution<double> ub0(rec.corner0[0], rec.corner1[0]);
+	//uniform_real_distribution<double> ub1(rec.corner0[1], rec.corner1[1]);
+	//uniform_real_distribution<double> ub2(rec.corner0[2], rec.corner1[2]);
+	//uniform_int_distribution<size_t> uen(0, num_entities - 1);
+	//normal_distribution<double> n01(0, 1);
+
+	FixedRandom r(seed, num_entities - 1, rec.corner0, rec.corner1);
+
+
 
 	// Generate an initial random conformation c0, and evaluate it.
 	conformation c0(num_active_torsions);
@@ -611,11 +616,11 @@ void ligand::monte_carlo(vector<result>& results, const size_t seed, const scori
 	for (size_t i = 0; (i < 1000) && (!valid_conformation); ++i)
 	{
 		// Randomize conformation c0.
-		c0.position = array<double, 3>{{ub0(rng), ub1(rng), ub2(rng)}};
-		c0.orientation = normalize(array<double, 4>{{n01(rng), n01(rng), n01(rng), n01(rng)}});
+		c0.position = array<double, 3>{{r.ub0(), r.ub1(), r.ub2()}};
+		c0.orientation = normalize(array<double, 4>{{r.n01(), r.n01(), r.n01(), r.n01()}});
 		for (size_t i = 0; i < num_active_torsions; ++i)
 		{
-			c0.torsions[i] = upi(rng);
+			c0.torsions[i] = r.upi();
 		}
 		valid_conformation = evaluate(c0, sf, rec, e_upper_bound, e0, f0, g0);
 	}
@@ -655,19 +660,19 @@ void ligand::monte_carlo(vector<result>& results, const size_t seed, const scori
 			c1 = c0;
 
 			// Determine an entity to mutate.
-			mutation_entity = uen(rng);
+			mutation_entity = r.uen();
 			assert(mutation_entity < num_entities);
 			if (mutation_entity < num_active_torsions) // Mutate an active torsion.
 			{
-				c1.torsions[mutation_entity] = upi(rng);
+				c1.torsions[mutation_entity] = r.upi();
 			}
 			else if (mutation_entity == num_active_torsions) // Mutate position.
 			{
-				c1.position += array<double, 3>{{u11(rng), u11(rng), u11(rng)}};
+				c1.position += array<double, 3>{{r.u11(), r.u11(), r.u11()}};
 			}
 			else // Mutate orientation.
 			{
-				c1.orientation = vec3_to_qtn4(0.01 * array<double, 3>{{u11(rng), u11(rng), u11(rng)}}) * c1.orientation;
+				c1.orientation = vec3_to_qtn4(0.01 * array<double, 3>{{r.u11(), r.u11(), r.u11()}}) * c1.orientation;
 				assert(normalized(c1.orientation));
 			}
 		} while (!evaluate(c1, sf, rec, e_upper_bound, e1, f1, g1));
@@ -764,7 +769,7 @@ void ligand::monte_carlo(vector<result>& results, const size_t seed, const scori
 
 		// Accept c1 according to Metropolis criteria.
 		const double delta = e0 - e1;
-		if (delta > 0 || u01(rng) < exp(delta))
+		if (delta > 0 || r.u01() < exp(delta))
 		{
 			// best_e is the best energy of all the conformations in the container.
 			// e1 will be saved if and only if it is even better than the best one.

@@ -9,16 +9,19 @@
 #include "random_forest.hpp"
 #include "receptor.hpp"
 #include "ligand.hpp"
+#include "array.hpp"
 
 int main(int argc, char* argv[])
 {
 	using namespace std;
 	using namespace std::filesystem;
+	cout << "HELLOOOOO" << endl;
 	path receptor_path, ligand_path, out_path;
 	array<double, 3> center, size;
 	size_t seed, num_threads, num_trees, num_tasks, max_conformations;
 	double granularity;
 	bool score_only;
+	bool anna_test = true;
 
 	// Process program options.
 	try
@@ -235,13 +238,12 @@ int main(int argc, char* argv[])
 	f.clear();
 
 	// Output headers to the standard output and the log file.
-	cout << "Creating grid maps of " << granularity << " A and running " << num_tasks << " Monte Carlo searches per ligand" << endl
+	cout << "Creating GRID maps of " << granularity << " A and running " << num_tasks << " Monte Carlo searches per ligand" << endl
 		<< "   Index             Ligand   nConfs   idock score (kcal/mol)   RF-Score (pKd)" << endl << setprecision(2);
 	cout.setf(ios::fixed, ios::floatfield);
 	ofstream log(out_path / "log.csv");
 	log.setf(ios::fixed, ios::floatfield);
 	log << "Ligand,nConfs,idock score (kcal/mol),RF-Score (pKd)" << endl << setprecision(2);
-
 	// Start to dock each input ligand.
 	size_t index = 0;
 	for (const auto& input_ligand_path : input_ligand_paths)
@@ -314,6 +316,47 @@ int main(int argc, char* argv[])
 
 			if (score_only)
 			{
+				cout << "SCORE ONLY" <<endl;
+				if (anna_test){
+					cout << "ANNA TEST" << endl;
+					// Define constants.
+					static const double pi = 3.1415926535897932; //!< Pi.
+					static const size_t num_alphas = 5; //!< Number of alpha values for determining step size in BFGS
+					const size_t num_mc_iterations = 100 * lig.num_heavy_atoms; //!< The number of iterations correlates to the complexity of ligand.
+					const size_t num_entities = 2 + lig.num_active_torsions; // Number of entities to mutate.
+					const size_t num_variables = 6 + lig.num_active_torsions; // Number of variables to optimize.
+					const double e_upper_bound = static_cast<double>(4 * lig.num_heavy_atoms); // A conformation will be droped if its free energy is not better than e_upper_bound.
+					const double required_square_error = static_cast<double>(1 * lig.num_heavy_atoms); // Ligands with RMSD < 1.0 will be clustered into the same cluster.
+
+					mt19937_64 rng(seed);
+					uniform_real_distribution<double> u01(0, 1);
+					uniform_real_distribution<double> u11(-1, 1);
+					uniform_real_distribution<double> upi(-pi, pi);
+					uniform_real_distribution<double> ub0(rec.corner0[0], rec.corner1[0]);
+					uniform_real_distribution<double> ub1(rec.corner0[1], rec.corner1[1]);
+					uniform_real_distribution<double> ub2(rec.corner0[2], rec.corner1[2]);
+					uniform_int_distribution<size_t> uen(0, num_entities - 1);
+					normal_distribution<double> n01(0, 1);
+
+					// Generate an initial random conformation c0, and evaluate it.
+					conformation c0(lig.num_active_torsions);
+					double e0, f0;
+					change g0(lig.num_active_torsions);
+					bool valid_conformation = false;
+					for (size_t i = 0; (i < 10); ++i)
+					{
+						// Randomize conformation c0.
+						c0.position = array<double, 3>{{ub0(rng), ub1(rng), ub2(rng)}};
+						c0.orientation = normalize(array<double, 4>{{n01(rng), n01(rng), n01(rng), n01(rng)}});
+						for (size_t i = 0; i < lig.num_active_torsions; ++i)
+						{
+							c0.torsions[i] = upi(rng);
+						}
+						lig.evaluate(c0, sf, rec, e_upper_bound, e0, f0, g0);
+						cout << e0 << endl;
+					}
+				}
+				else{
 				num_confs = 1;
 				conformation c0(lig.num_active_torsions);
 				c0.position = origin;
@@ -326,6 +369,7 @@ int main(int argc, char* argv[])
 				id_score = r0.e_nd;
 				rf_score = r0.rf;
 				lig.write_models(output_ligand_path, {{ move(r0) }}, rec);
+				}
 			}
 			else
 			{

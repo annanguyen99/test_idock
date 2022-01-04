@@ -15,7 +15,6 @@ int main(int argc, char* argv[])
 {
 	using namespace std;
 	using namespace std::filesystem;
-	cout << "HELLOOOOO" << endl;
 	path receptor_path, ligand_path, out_path;
 	array<double, 3> center, size;
 	size_t seed, num_threads, num_trees, num_tasks, max_conformations;
@@ -257,9 +256,10 @@ int main(int argc, char* argv[])
 		double id_score = 0;
 		double rf_score = 0;
 		const path output_ligand_path = out_path / input_ligand_path.filename();
-		if (exists(output_ligand_path) && !equivalent(ligand_path, out_path))
+		if (exists(output_ligand_path) && !equivalent(ligand_path, out_path) && !anna_test)
 		{
 			// Extract idock score and RF-Score from output file.
+			cout << "Use previous dock" << endl;
 			string line;
 			for (ifstream ifs(output_ligand_path); getline(ifs, line);)
 			{
@@ -319,14 +319,14 @@ int main(int argc, char* argv[])
 				cout << "SCORE ONLY" <<endl;
 				if (anna_test){
 					cout << "ANNA TEST" << endl;
+					ofstream testfile;
+					testfile.open("test_01.txt");
+
 					// Define constants.
 					static const double pi = 3.1415926535897932; //!< Pi.
-					static const size_t num_alphas = 5; //!< Number of alpha values for determining step size in BFGS
-					const size_t num_mc_iterations = 100 * lig.num_heavy_atoms; //!< The number of iterations correlates to the complexity of ligand.
+					static const size_t seed = 1641317389;
 					const size_t num_entities = 2 + lig.num_active_torsions; // Number of entities to mutate.
-					const size_t num_variables = 6 + lig.num_active_torsions; // Number of variables to optimize.
 					const double e_upper_bound = static_cast<double>(4 * lig.num_heavy_atoms); // A conformation will be droped if its free energy is not better than e_upper_bound.
-					const double required_square_error = static_cast<double>(1 * lig.num_heavy_atoms); // Ligands with RMSD < 1.0 will be clustered into the same cluster.
 
 					mt19937_64 rng(seed);
 					uniform_real_distribution<double> u01(0, 1);
@@ -343,18 +343,39 @@ int main(int argc, char* argv[])
 					double e0, f0;
 					change g0(lig.num_active_torsions);
 					bool valid_conformation = false;
-					for (size_t i = 0; (i < 10); ++i)
+					for (size_t i = 0; (i < 1000); ++i)
 					{
 						// Randomize conformation c0.
 						c0.position = array<double, 3>{{ub0(rng), ub1(rng), ub2(rng)}};
+						for (size_t i = 0; i < c0.position.size(); i++)
+						{
+							cout << c0.position[i] << " ";
+							testfile << c0.position[i] << " ";
+						}
 						c0.orientation = normalize(array<double, 4>{{n01(rng), n01(rng), n01(rng), n01(rng)}});
+						for (size_t i = 0; i < c0.orientation.size(); i++)
+						{
+							cout << c0.orientation[i] << " ";
+							testfile << c0.orientation[i] << " ";
+						}
 						for (size_t i = 0; i < lig.num_active_torsions; ++i)
 						{
 							c0.torsions[i] = upi(rng);
+							cout << c0.torsions[i] << " ";
+							testfile << c0.torsions[i] << " ";
 						}
-						lig.evaluate(c0, sf, rec, e_upper_bound, e0, f0, g0);
-						cout << e0 << endl;
+						if(lig.evaluate(c0, sf, rec, e_upper_bound, e0, f0, g0)){
+							cout << e0 << endl;
+							testfile << e0 << endl;
+						}
+						else
+						{
+							cout << 0 << endl;
+							testfile << 0 << endl;
+						}
+	
 					}
+					testfile.close();
 				}
 				else{
 				num_confs = 1;

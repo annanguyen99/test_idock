@@ -3,6 +3,7 @@
 
 #include <random>
 #include <stdexcept>
+#include <climits>
 
 //Uniform distribution - numpy.rand
 class RandomNumGen_NumpyCompatible_64 {

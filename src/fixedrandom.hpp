@@ -5,6 +5,8 @@
 #include "randomnumgen_numpycompatible.hpp"
 #include "array.hpp"
 
+constexpr auto M_PI = 3.14159265358979323846;
+
 class FixedRandom{
 
 public:
@@ -21,7 +23,7 @@ public:
 		return uniformDouble(-1, 1);
 	}
 	double upi() {
-		return uniformDouble(-std::_Pi, std::_Pi);
+		return uniformDouble(-M_PI, M_PI);
 	}
 	double ub0() {
 		return uniformDouble(c0[0], c1[0]);

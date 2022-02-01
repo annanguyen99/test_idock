@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
 	array<double, 3> center, size;
 	size_t seed, num_threads, num_trees, num_tasks, max_conformations;
 	double granularity;
-	bool score_only;
+	bool score_only = true;
 	bool anna_test = true;
 
 	// Process program options.
@@ -161,6 +161,7 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
+	cout << "Hello" << endl;
 	// Parse the receptor.
 	cout << "Parsing the receptor " << receptor_path << endl;
 	receptor rec(receptor_path, center, size, granularity);
@@ -259,24 +260,24 @@ int main(int argc, char* argv[])
 		if (exists(output_ligand_path) && !equivalent(ligand_path, out_path) && !anna_test)
 		{
 			// Extract idock score and RF-Score from output file.
-			cout << "Use previous dock" << endl;
-			string line;
-			for (ifstream ifs(output_ligand_path); getline(ifs, line);)
-			{
-				const string record = line.substr(0, 10);
-				if (record == "MODEL     ")
-				{
-					++num_confs;
-				}
-				else if (num_confs == 1 && record == "REMARK 921")
-				{
-					id_score = stod(line.substr(55, 8));
-				}
-				else if (num_confs == 1 && record == "REMARK 927")
-				{
-					rf_score = stod(line.substr(55, 8));
-				}
-			}
+			// cout << "Use previous dock" << endl;
+			// string line;
+			// for (ifstream ifs(output_ligand_path); getline(ifs, line);)
+			// {
+			// 	const string record = line.substr(0, 10);
+			// 	if (record == "MODEL     ")
+			// 	{
+			// 		++num_confs;
+			// 	}
+			// 	else if (num_confs == 1 && record == "REMARK 921")
+			// 	{
+			// 		id_score = stod(line.substr(55, 8));
+			// 	}
+			// 	else if (num_confs == 1 && record == "REMARK 927")
+			// 	{
+			// 		rf_score = stod(line.substr(55, 8));
+			// 	}
+			// }
 		}
 		else
 		{
@@ -320,14 +321,14 @@ int main(int argc, char* argv[])
 				if (anna_test){
 					cout << "ANNA TEST" << endl;
 					ofstream testfile;
-					testfile.open("test_01.txt");
+					testfile.open("test_02.txt");
 
 					// Define constants.
 					static const double pi = 3.1415926535897932; //!< Pi.
 					static const size_t seed = 1641317389;
 					const size_t num_entities = 2 + lig.num_active_torsions; // Number of entities to mutate.
 					const double e_upper_bound = static_cast<double>(4 * lig.num_heavy_atoms); // A conformation will be droped if its free energy is not better than e_upper_bound.
-
+					cout << "the e_upper_bound" << e_upper_bound << endl;
 					mt19937_64 rng(seed);
 					uniform_real_distribution<double> u01(0, 1);
 					uniform_real_distribution<double> u11(-1, 1);
@@ -349,28 +350,41 @@ int main(int argc, char* argv[])
 						c0.position = array<double, 3>{{ub0(rng), ub1(rng), ub2(rng)}};
 						for (size_t i = 0; i < c0.position.size(); i++)
 						{
-							cout << c0.position[i] << " ";
+							//cout << c0.position[i] << " ";
 							testfile << c0.position[i] << " ";
 						}
 						c0.orientation = normalize(array<double, 4>{{n01(rng), n01(rng), n01(rng), n01(rng)}});
 						for (size_t i = 0; i < c0.orientation.size(); i++)
 						{
-							cout << c0.orientation[i] << " ";
+							//cout << c0.orientation[i] << " ";
 							testfile << c0.orientation[i] << " ";
 						}
 						for (size_t i = 0; i < lig.num_active_torsions; ++i)
 						{
 							c0.torsions[i] = upi(rng);
-							cout << c0.torsions[i] << " ";
+							//cout << c0.torsions[i] << " ";
 							testfile << c0.torsions[i] << " ";
 						}
 						if(lig.evaluate(c0, sf, rec, e_upper_bound, e0, f0, g0)){
-							cout << e0 << endl;
+							// Save gradient
+							testfile << g0[0] << " ";
+							testfile << g0[1] << " ";
+							testfile << g0[2] << " ";
+							testfile << g0[3] << " ";
+							testfile << g0[4] << " ";
+							testfile << g0[5] << " ";
+
+							// Save the inter-molecular energy
+							testfile << f0 << " ";
+							// Save the intermolecular free energy 
+							cout << "Energy 2: " << e0 << endl;
+							// Save the total free energy
 							testfile << e0 << endl;
+
+
 						}
 						else
 						{
-							cout << 0 << endl;
 							testfile << 0 << endl;
 						}
 	

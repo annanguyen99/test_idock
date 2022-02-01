@@ -458,6 +458,7 @@ bool ligand::evaluate(const conformation& conf, const scoring_function& sf, cons
 	g[4] = torq.front()[1];
 	g[5] = torq.front()[2];
 
+	cout << "Energy 1: " << e << endl;
 	return true;
 }
 

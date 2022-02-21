@@ -47,6 +47,9 @@
     <ClCompile Include="src\result.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\randomnumgen_numpycompatible.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\atom.hpp">
@@ -80,6 +83,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\conformation.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\fixedrandom.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\randomnumgen_numpycompatible.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -458,7 +458,6 @@ bool ligand::evaluate(const conformation& conf, const scoring_function& sf, cons
 	g[4] = torq.front()[1];
 	g[5] = torq.front()[2];
 
-	cout << "Energy 1: " << e << endl;
 	return true;
 }
 
@@ -585,6 +584,8 @@ void ligand::write_models(const path& output_ligand_path, const vector<result>& 
 
 void ligand::monte_carlo(vector<result>& results, const size_t seed, const scoring_function& sf, const receptor& rec) const
 {
+	ofstream bfgsfile;
+		bfgsfile.open("test_bfgs_01.txt");
 	// Define constants.
 	static const double pi = 3.1415926535897932; //!< Pi.
 	static const size_t num_alphas = 5; //!< Number of alpha values for determining step size in BFGS
@@ -676,13 +677,42 @@ void ligand::monte_carlo(vector<result>& results, const size_t seed, const scori
 		// Initialize the Hessian matrix to identity.
 		h = h1;
 
+		bfgsfile << "// BEFORE iteration " << mc_i << endl;
+
+		for (size_t i = 0; i < c1.position.size(); i++)
+		{
+			bfgsfile << c1.position[i] << " ";
+		}
+		bfgsfile << endl;
+		for (size_t i = 0; i < c0.orientation.size(); i++)
+		{
+			bfgsfile << c1.orientation[i] << " ";
+		}
+		bfgsfile << endl;
+		for (size_t i = 0; i < c1.torsions.size(); ++i)
+		{
+			bfgsfile << c1.torsions[i] << " ";
+		}
+		bfgsfile << endl;
+		bfgsfile << "Energy before: " << e1 << endl;
+		bfgsfile << "g1 before: ";
+		for (size_t i = 0; i < g1.size(); ++i)
+		{
+			bfgsfile << g1[i]<< " ";
+		}
+		bfgsfile << endl;
+		bfgsfile << "F1 value before: "<< f1 << endl;
+		bfgsfile << endl;
+		bfgsfile << endl;
+
 		// Given the mutated conformation c1, use BFGS to find a local minimum.
 		// The conformation of the local minimum is saved to c2, and its derivative is saved to g2.
 		// http://en.wikipedia.org/wiki/BFGS_method
 		// http://en.wikipedia.org/wiki/Quasi-Newton_method
 		// The loop breaks when an appropriate alpha cannot be found.
 		while (true)
-		{
+		{	
+
 			// Calculate p = -h*g, where p is for descent direction, h for Hessian, and g for gradient.
 			for (size_t i = 0; i < num_variables; ++i)
 			{
@@ -763,6 +793,33 @@ void ligand::monte_carlo(vector<result>& results, const size_t seed, const scori
 			g1 = g2;
 		}
 
+		bfgsfile << "// iteration " << mc_i << endl;
+
+		for (size_t i = 0; i < c1.position.size(); i++)
+		{
+			bfgsfile << c1.position[i] << " ";
+		}
+		bfgsfile << endl;
+		for (size_t i = 0; i < c0.orientation.size(); i++)
+		{
+			bfgsfile << c1.orientation[i] << " ";
+		}
+		bfgsfile << endl;
+		for (size_t i = 0; i < c1.torsions.size(); ++i)
+		{
+			bfgsfile << c1.torsions[i] << " ";
+		}
+		bfgsfile << endl;
+		bfgsfile << "Energy: " << e1 << endl;
+		bfgsfile << "g1 after: ";
+		for (size_t i = 0; i < g1.size(); ++i)
+		{
+			bfgsfile << g1[i]<< " ";
+		}
+		bfgsfile << endl;
+		bfgsfile << "F1 value after: "<< f1 << endl;
+		bfgsfile << endl;
+
 		// Accept c1 according to Metropolis criteria.
 		const double delta = e0 - e1;
 		if (delta > 0 || u01(rng) < exp(delta))
@@ -779,5 +836,7 @@ void ligand::monte_carlo(vector<result>& results, const size_t seed, const scori
 			c0 = c1;
 			e0 = e1;
 		}
+
 	}
+
 }

@@ -321,7 +321,7 @@ int main(int argc, char* argv[])
 				if (anna_test){
 					cout << "ANNA TEST" << endl;
 					ofstream testfile;
-					testfile.open("test_02.txt");
+					testfile.open("test_03.txt");
 
 					// Define constants.
 					static const double pi = 3.1415926535897932; //!< Pi.
